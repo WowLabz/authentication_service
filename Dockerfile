@@ -5,4 +5,3 @@ COPY . /authentication_server_rocker/
 
 RUN cargo build 
 EXPOSE 7001
-CMD cargo run
