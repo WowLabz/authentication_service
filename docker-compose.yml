@@ -1,26 +1,20 @@
-version: '3.1'
+version: '3.4'
 
 services:
     mongo:
         image: mongo
         restart: always
         ports:
-          - "27017:27017"
-        environment: 
-            MONGO_INITDB_ROOT_USERNAME: root
-            MONGO_INITDB_ROOT_PASSWORD: example
+            - "27017:27017"
     authentication_service:
         image: authentication_service
-        container_name: authentication_service
-        restart: always
+        build:
+          context: .
+          dockerfile: Dockerfile
         ports:
             - "7001:3001"
         depends_on:
             - mongo
-        build:
-          context: .
-          dockerfile: Dockerfile
-        command: cargo run
         environment:
-          - SECRET_KEY="my-secretkey-to-change-in-prod"
-        
+            - MONGO_URI=mongodb://mongo:27017
+        restart: always
