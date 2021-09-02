@@ -11,6 +11,7 @@ services:
         restart: always
         ports:
             - "27017:27017"
+        command: [--auth]   
         environment: 
             MONGO_INITDB_ROOT_USERNAME: marketplace_admin
             MONGO_INITDB_ROOT_PASSWORD: marketplace_pwd
@@ -24,6 +25,6 @@ services:
         depends_on:
             - mongo
         environment:
-            - MONGO_URI=mongodb://marketplace_admin:marketplace_pwd@127.0.0.1:27017/authentication-service
+            - MONGO_URI=mongodb://marketplace_admin:marketplace_pwd@mongo:27017/authentication-service?authSource=admin
             - SECRET_KEY=my-secretkey-to-change-in-prod
         restart: always
