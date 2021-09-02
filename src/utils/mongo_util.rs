@@ -15,7 +15,7 @@ use serde_json::{json, Value};
 // use dotenv::dotenv;
 
 pub const DATABASE_NAME: &str = "users";
-pub const APP_NAME: &str = "authentication-server";
+pub const APP_NAME: &str = "authentication-service";
 
 pub struct MongoUtil;
 
