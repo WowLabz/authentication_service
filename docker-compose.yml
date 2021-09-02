@@ -2,19 +2,28 @@ version: '3.4'
 
 services:
     mongo:
-        image: mongo
+        image: marketplace_mongo
+        build:
+            context: ./mongoDb
+            dockerfile: Dockerfile
+        volumes:
+            - "./mongoDb/mongoVolume/db:/data/db"
         restart: always
         ports:
             - "27017:27017"
+        environment: 
+            MONGO_INITDB_ROOT_USERNAME: marketplace_admin
+            MONGO_INITDB_ROOT_PASSWORD: marketplace_pwd
     authentication_service:
         image: authentication_service
         build:
-          context: .
-          dockerfile: Dockerfile
+            context: .
+            dockerfile: Dockerfile
         ports:
             - "7001:3001"
         depends_on:
             - mongo
         environment:
-            - MONGO_URI=mongodb://mongo:27017
+            - MONGO_URI=mongodb://marketplace_admin:marketplace_pwd@127.0.0.1:27017/authentication-service
+            - SECRET_KEY=my-secretkey-to-change-in-prod
         restart: always
