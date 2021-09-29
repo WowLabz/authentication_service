@@ -70,6 +70,9 @@ async fn rocket() -> _ {
         .register("/", catchers![not_found])
 }
 
+
+/// Note: Run the test using a single thread
+/// cargo test -- --test-threads=1
 #[cfg(test)]
 mod test {
     use super::rocket;
@@ -139,6 +142,7 @@ mod test {
             .header(content_type.clone())
             .body(REQ_BODY_SIGN_UP.clone())
             .dispatch();
+        // println!("sign-up {:?}", response.await);
         assert_eq!(response.await.status(), Status::Ok);
 
         let response = client
@@ -148,6 +152,86 @@ mod test {
             .body(REQ_BODY_LOG_IN.clone())
             .dispatch();
         assert_eq!(response.await.status(), Status::Ok);
+
+        let response = client
+            .post("/auth/delete-user")
+            .header(ContentType::JSON)
+            .body(REQ_BODY_DEL_USER.clone())
+            .dispatch();
+        assert_eq!(response.await.status(), Status::Ok);
+    }
+
+    #[rocket::async_test]
+    async fn correct_error_response_if_user_already_registered() {
+        let content_type =
+            Header::new("Content-Type", format!("application/x-www-form-urlencoded"));
+
+        let client = Client::tracked(rocket().await)
+            .await
+            .expect("valid rocket instance");
+
+        let response = client
+            .post("/auth/sign-up")
+            .header(content_type.clone())
+            .body(REQ_BODY_SIGN_UP.clone())
+            .dispatch();
+        assert_eq!(response.await.status(), Status::Ok);
+
+        let response = client
+            .post("/auth/sign-up")
+            .header(content_type.clone())
+            .body(REQ_BODY_SIGN_UP.clone())
+            .dispatch();
+        assert_eq!(response.await.status(), Status::NotImplemented);
+
+        let response = client
+            .post("/auth/delete-user")
+            .header(ContentType::JSON)
+            .body(REQ_BODY_DEL_USER.clone())
+            .dispatch();
+        assert_eq!(response.await.status(), Status::Ok);
+    }
+
+    #[rocket::async_test]
+    async fn correct_error_for_user_sign_in_without_sign_up() {
+        let content_type =
+            Header::new("Content-Type", format!("application/x-www-form-urlencoded"));
+
+        let client = Client::tracked(rocket().await)
+            .await
+            .expect("valid rocket instance");
+
+        let response = client
+            .post("/auth/sign-in")
+            .header(content_type)
+            .body(REQ_BODY_LOG_IN.clone())
+            .dispatch();
+        assert_eq!(response.await.status(), Status::InternalServerError);
+    }
+
+    #[rocket::async_test]
+    async fn correct_error_for_incorrect_password_sign_in() {
+        let content_type =
+            Header::new("Content-Type", format!("application/x-www-form-urlencoded"));
+
+        let client = Client::tracked(rocket().await)
+            .await
+            .expect("valid rocket instance");
+
+        let response = client
+            .post("/auth/sign-up")
+            .header(content_type.clone())
+            .body(REQ_BODY_SIGN_UP.clone())
+            .dispatch();
+        assert_eq!(response.await.status(), Status::Ok);
+
+        let req_body_incorrect_pass = "username=kakashi@gmail.com&password=somethingelse";
+        let response = client
+            .post("/auth/sign-in")
+            .header(content_type.clone())
+            .body(req_body_incorrect_pass)
+            .dispatch();
+        assert_eq!(response.await.status(), Status::NotImplemented);
 
         let response = client
             .post("/auth/delete-user")
