@@ -42,3 +42,10 @@ pub struct LoginUser {
     // #[serde(skip_serializing)]
     pub password: String,
 }
+
+
+#[derive(FromForm, Serialize, Debug, Deserialize, Clone)]
+pub struct DeleteUser {
+    pub username: String,
+}
+

@@ -55,3 +55,15 @@ pub async fn find_user(user: Json<Value>) -> Result<status::Custom<Value>, statu
         return Ok(status::Custom(Status::Ok, message))
     })
 }
+
+#[post("/auth/delete-user", data = "<user>")]
+pub async fn delete_user(user: Json<DeleteUser>) -> Result<status::Custom<Value>, status::Custom<Value>> {
+    MongoUtil::delete_one_by_filter(json!({"email_id": user.username})).await.map_err(|err| {
+        let message = json!({"success": false, "message": format!("Delete User Failed with error: {:#?}", err)});
+        return status::Custom(Status::InternalServerError, message);
+
+    }).and_then(|data| {
+        let message = json!({"success": true, "message": "User Deleted", "data": data});
+        return Ok(status::Custom(Status::Ok, message))
+    })
+}

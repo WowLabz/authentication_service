@@ -12,7 +12,7 @@ use mongodb::{
     Client, Collection,
 };
 use serde_json::{json, Value};
-// use dotenv::dotenv;
+use dotenv::dotenv;
 
 pub const DATABASE_NAME: &str = "users";
 pub const APP_NAME: &str = "authentication-service";
@@ -22,7 +22,7 @@ pub struct MongoUtil;
 impl MongoUtil {
     pub async fn mongo_client() -> Result<Client, Error> {
         // Parse a connection string into an options struct.
-        //  dotenv().ok();
+        dotenv().ok();
         let mongo_uri: String = std::env::var("MONGO_URI")
             .expect("Mongo Uri not set")
             .into();
@@ -110,6 +110,13 @@ impl MongoUtil {
         let db = MongoUtil::mongo_collection(DATABASE_NAME).await?;
         let filter_json = json!({ "_id": id });
         let insertable_filter = bson::to_document(&filter_json).unwrap();
+        println!("insertable_filter: {:#?}", insertable_filter.clone());
+        db.delete_one(insertable_filter, None).await
+    }
+
+    pub async fn delete_one_by_filter(filter: Value) -> Result<DeleteResult, Error> {
+        let db = MongoUtil::mongo_collection(DATABASE_NAME).await?;
+        let insertable_filter = bson::to_document(&filter).unwrap();
         println!("insertable_filter: {:#?}", insertable_filter.clone());
         db.delete_one(insertable_filter, None).await
     }
