@@ -1,1 +1,2 @@
+MONGO_URI=mongodb://
 SECRET_KEY=my-secretkey-to-change-in-prod

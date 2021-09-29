@@ -12,7 +12,7 @@ use mongodb::{
     Client, Collection,
 };
 use serde_json::{json, Value};
-// use dotenv::dotenv;
+use dotenv::dotenv;
 
 pub const DATABASE_NAME: &str = "users";
 pub const APP_NAME: &str = "authentication-service";
@@ -22,7 +22,7 @@ pub struct MongoUtil;
 impl MongoUtil {
     pub async fn mongo_client() -> Result<Client, Error> {
         // Parse a connection string into an options struct.
-        //  dotenv().ok();
+         dotenv().ok();
         let mongo_uri: String = std::env::var("MONGO_URI")
             .expect("Mongo Uri not set")
             .into();
