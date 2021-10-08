@@ -8,6 +8,9 @@ license = "Apache-2.0"
 
 [dependencies]
 rocket = { version = "0.5.0-rc.1", features = ["secrets", "tls", "json"] }
+rocket-multipart-form-data = "0.10.0"
+rocket-download-response = "0.5"
+async-std = "1.10.0"
 serde = { version = "1.0", features = ["derive"] }
 base64 = "0.13"
 serde_json = "1.0.64"
