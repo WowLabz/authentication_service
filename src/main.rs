@@ -268,4 +268,52 @@ mod test {
             .dispatch();
         assert_eq!(response.await.status(), Status::Ok);
     }
+
+    #[rocket::async_test]
+    async fn upload_and_download_file() {
+        let content_type = "multipart/form-data; boundary=X-BOUNDARY"
+            .parse::<ContentType>()
+            .unwrap();
+
+        let client = Client::tracked(rocket().await)
+            .await
+            .expect("valid rocket instance");
+
+        let multipart_body = &[
+            "--X-BOUNDARY",
+            r#"Content-Disposition: form-data; name="somefile"; filename="foo.txt""#,
+            "Content-Type: text/plain",
+            "",
+            "hi there",
+            "--X-BOUNDARY--",
+            "",
+        ].join("\r\n");
+
+        let upload_file = client
+            .post("/files")
+            .header(content_type.clone())
+            .body(multipart_body)
+            .dispatch()
+            .await;
+        assert_eq!(upload_file.status(), Status::Ok);
+
+        let content = std::fs::read_to_string("uploads/foo.txt").unwrap();
+        assert_eq!(content, "hi there");
+
+        let content = upload_file.into_string();
+        let json_body: serde_json::Value = serde_json::from_str(&content.await.unwrap()).unwrap();
+        let download_url = json_body.get("data").unwrap();
+        assert_eq!(download_url, "http://0.0.0.0:3001/files/foo.txt");
+
+        let download_file = client
+            .get("/files/foo.txt")
+            .dispatch()
+            .await;
+        assert_eq!(download_file.status(), Status::Ok);
+
+        let content = download_file.into_string();
+        assert_eq!(content.await.unwrap(), "hi there");
+
+        std::fs::remove_file("uploads/foo.txt").unwrap();
+    }
 }
