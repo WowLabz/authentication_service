@@ -13,7 +13,7 @@ mod utils;
 
 use rocket::{
     fairing::{Fairing, Info, Kind},
-    http::{Header, Status},
+    http::{ContentType, Header, Status},
     response::status,
     Request, Response,
 };
@@ -23,6 +23,21 @@ use serde_json::{json, Value};
 fn api_home() -> status::Custom<Value> {
     let message = json!({"success": true, "message": "Authentication Server"});
     status::Custom(Status::Ok, message)
+}
+
+#[get("/files")]
+pub fn file_home() -> (ContentType, &'static str) {
+    let html = r#"<html>
+      <body>
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="somefile"/>
+            <!-- <input type="text" name="username"/> -->
+            <!-- <input type="file" name="somefile"/> -->
+            <button type="submit">Submit</button>
+        </form>
+      </body>
+    </html>"#;
+    (ContentType::HTML, html)
 }
 
 #[catch(404)]
@@ -60,10 +75,23 @@ async fn rocket() -> _ {
             "/",
             routes![
                 api_home,
+                file_home,
+            ],
+        )
+        .mount(
+            "/auth",
+            routes![
                 controller::sign_in,
                 controller::sign_up,
                 controller::find_user,
-                controller::delete_user
+                controller::delete_user,
+            ],
+        )
+        .mount(
+            "/files",
+            routes![
+                controller::upload_file,
+                controller::download_file,
             ],
         )
         .attach(CORS)
