@@ -234,7 +234,7 @@ mod test {
             .header(content_type)
             .body(REQ_BODY_LOG_IN.clone())
             .dispatch();
-        assert_eq!(response.await.status(), Status::InternalServerError);
+        assert_eq!(response.await.status(), Status::NotImplemented);
     }
 
     #[rocket::async_test]

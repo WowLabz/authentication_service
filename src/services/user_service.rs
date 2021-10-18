@@ -19,7 +19,7 @@ impl UserService {
         }
     }
 
-    pub async fn login(user: LoginUser) -> Result<bool, AuthenticationError> {
+    pub async fn login(user: LoginUser) -> Result<User, AuthenticationError> {
         // Check if the user is already present in db
         let found_user = MongoUtil::find_one(json!({"email_id": user.username}))
             .await
@@ -29,12 +29,12 @@ impl UserService {
         // Verify passwords
         let verifier = CryptoService::new();
         match verifier
-            .verify_password(user.password, found_user?.password.unwrap())
+            .verify_password(user.password, found_user.clone()?.password.unwrap())
             .await
         {
             Ok(is_verified) => {
                 return if is_verified {
-                    Ok(is_verified)
+                    Ok(found_user?)
                 } else {
                     Err(AuthenticationError::PasswordMismatch(
                         "Password Does Not Match".to_owned(),

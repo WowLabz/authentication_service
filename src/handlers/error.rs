@@ -1,7 +1,7 @@
 use rocket_multipart_form_data::MultipartFormDataError;
 use crate::models::user::User;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AuthenticationError {
     MongoError(mongodb::error::Error),
     UserAlreadyExists(User),
