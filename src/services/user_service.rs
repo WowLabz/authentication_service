@@ -29,7 +29,7 @@ impl UserService {
         // Verify passwords
         let verifier = CryptoService::new();
         match verifier
-            .verify_password(user.password, found_user.unwrap().password.unwrap())
+            .verify_password(user.password, found_user?.password.unwrap())
             .await
         {
             Ok(is_verified) => {
