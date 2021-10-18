@@ -85,6 +85,7 @@ async fn rocket() -> _ {
                 controller::sign_up,
                 controller::find_user,
                 controller::delete_user,
+                controller::get_user_tags,
             ],
         )
         .mount(
