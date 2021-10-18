@@ -107,7 +107,7 @@ mod test {
     use super::rocket;
     use rocket::http::{ContentType, Header, Status};
     use rocket::local::asynchronous::Client;
-    const REQ_BODY_SIGN_UP: &str = "first_name=kakashi&last_name=hatake&user_type=Customer&email_id=kakashi@gmail.com&password=12!@qwer";
+    const REQ_BODY_SIGN_UP: &str = "first_name=kakashi&last_name=hatake&user_type=Customer&email_id=kakashi@gmail.com&password=12!@qwer&user_tags[0]=TAG1&user_tags[1]=TAG2";
     const REQ_BODY_LOG_IN: &str = "username=kakashi@gmail.com&password=12!@qwer";
     const REQ_BODY_DEL_USER: &str = r#"{
         "username": "kakashi@gmail.com"
@@ -317,4 +317,13 @@ mod test {
 
         std::fs::remove_file("uploads/foo.txt").unwrap();
     }
+
+    #[rocket::async_test]
+    async fn it_works_with_correct_status_for_getting_all_user_tags() {
+        let client = Client::tracked(rocket().await)
+            .await
+            .expect("valid rocket instance");
+        let response = client.get("/auth/get-user-tags").dispatch();
+        assert_eq!(response.await.status(), Status::Ok);
+    }  
 }
