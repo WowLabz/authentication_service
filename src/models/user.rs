@@ -1,10 +1,10 @@
 use chrono::NaiveDateTime;
+use mongodb::bson;
 use rocket::form::FromForm;
 use serde::{Deserialize, Serialize};
-use validator::Validate;
-use mongodb::bson;
 use serde_json::{json, Value};
 use strum_macros::{EnumString, EnumVariantNames};
+use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, FromFormField, Clone)]
 pub enum UserType {
@@ -12,14 +12,15 @@ pub enum UserType {
     Worker,
 }
 
-#[derive(Debug, Serialize, Deserialize, FromFormField, Clone,  EnumString, EnumVariantNames)]
+#[derive(Debug, Serialize, Deserialize, FromFormField, Clone, EnumString, EnumVariantNames)]
 // #[strum(serialize_all = "kebab_case")]
 pub enum UserTags {
-    TAG1,
-    TAG2,
-    TAG3,
-    TAG4,
-    TAG5
+    WebDevelopment,
+    MobileDevelopment,
+    MachineLearning,
+    DeepLearning,
+    FullStackDevelopment,
+    CoreBlockchainDevelopment,
 }
 
 #[derive(Serialize, Debug, Clone, Deserialize)]
