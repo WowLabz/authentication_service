@@ -2,6 +2,7 @@ use chrono::NaiveDateTime;
 use rocket::form::FromForm;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
+use mongodb::bson;
 
 #[derive(Debug, Serialize, Deserialize, FromFormField, Clone)]
 pub enum UserType {
@@ -11,10 +12,12 @@ pub enum UserType {
 
 #[derive(Serialize, Debug, Clone, Deserialize)]
 pub struct User {
+    #[serde(rename = "_id")]
+    pub user_id: Option<bson::oid::ObjectId>,
     pub first_name: String,
     pub last_name: String,
     pub email_id: String,
-    // #[serde(skip_serializing)]
+    #[serde(skip_serializing)]
     pub password: Option<String>,
     pub user_type: UserType,
     pub bio: Option<String>,
@@ -43,9 +46,7 @@ pub struct LoginUser {
     pub password: String,
 }
 
-
 #[derive(FromForm, Serialize, Debug, Deserialize, Clone)]
 pub struct DeleteUser {
     pub username: String,
 }
-
