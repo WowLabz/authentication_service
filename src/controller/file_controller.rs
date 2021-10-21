@@ -36,10 +36,10 @@ pub async fn upload_file(
             return status::Custom(Status::BadRequest, message);
         })?;
 
-    let url = multipart.save_to_file().await.unwrap();
+    let file_data = multipart.save_to_file().await.unwrap();
 
     let elapsed = initial_time.elapsed();
-    let message = json!({"success": true, "message": "Upload Successful", "data": url, "elapsed": {"value": elapsed.as_millis() as u32, "unit": "milliseconds"}});
+    let message = json!({"success": true, "message": "Upload Successful", "data": file_data, "elapsed": {"value": elapsed.as_millis() as u32, "unit": "milliseconds"}});
 
     Ok(status::Custom(Status::Ok, message))
 }

@@ -1,3 +1,4 @@
+use crate::models::file::FileData;
 use rocket::data::Data;
 use rocket::http::{ContentType, Status};
 use rocket::response::status;
@@ -7,8 +8,8 @@ use rocket_multipart_form_data::{
 
 use async_std::io::prelude::*;
 
-use crate::utils::file_util::{FileUtil, STORAGE_DIRECTORY};
 use crate::handlers::error::TransmissionError;
+use crate::utils::file_util::{FileUtil, STORAGE_DIRECTORY};
 
 pub struct MultipartHandler {
     pub content_type: Option<Mime>,
@@ -46,7 +47,7 @@ impl MultipartHandler {
         })
     }
 
-    pub async fn save_to_file(&self) -> Result<String, TransmissionError> {
+    pub async fn save_to_file(&self) -> Result<FileData, TransmissionError> {
         let path = async_std::path::Path::new(STORAGE_DIRECTORY);
         if !path.exists().await {
             async_std::fs::create_dir(path).await?;
@@ -54,26 +55,26 @@ impl MultipartHandler {
             // .map_err(|e| TransmissionError::Message("Failed to save data to file"))?;
         }
 
-        let mut file = async_std::fs::File::create(format!(
-            "{}/{}",
-            STORAGE_DIRECTORY,
-            self.file_name
-        ))
-        .await?;
+        let mut file =
+            async_std::fs::File::create(format!("{}/{}", STORAGE_DIRECTORY, self.file_name))
+                .await?;
+
         // .map_err(|e| e.into())?;
         // .map_err(|e| TransmissionError::Message("Failed to save data to file"))?;
 
         file.write_all(&self.raw).await?;
         // .map_err(|e| e.into());
         // .map_err(|e| TransmissionError::Message("Failed to save data to file"))?;
+        file.sync_all().await?;
+        let meta_data = file.metadata().await?;
 
-        Ok(format!("{}/{}", FileUtil::get_basefile_path().await, self.file_name))
+        let file = FileData {
+            name: self.file_name.to_owned(),
+            url: format!("{}/{}", FileUtil::get_basefile_path().await, self.file_name),
+            size: meta_data.len(),
+            size_unit: "bytes".to_owned()
+        };
+
+        Ok(file)
     }
 }
-
-// impl Default for MultipartHandler {
-//     fn default() {
-//         MultipartHandler {
-//         }
-//     }
-// }
