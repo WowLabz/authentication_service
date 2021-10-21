@@ -107,7 +107,7 @@ mod test {
     use super::rocket;
     use rocket::http::{ContentType, Header, Status};
     use rocket::local::asynchronous::Client;
-    const REQ_BODY_SIGN_UP: &str = "first_name=kakashi&last_name=hatake&user_type=Customer&email_id=kakashi@gmail.com&password=12!@qwer&user_tags[0]=TAG1&user_tags[1]=TAG2";
+    const REQ_BODY_SIGN_UP: &str = "first_name=kakashi&last_name=hatake&user_type=Customer&email_id=kakashi@gmail.com&password=12!@qwer&user_tags[0]=WebDevelopment&user_tags[1]=MobileDevelopment";
     const REQ_BODY_LOG_IN: &str = "username=kakashi@gmail.com&password=12!@qwer";
     const REQ_BODY_DEL_USER: &str = r#"{
         "username": "kakashi@gmail.com"
@@ -303,8 +303,9 @@ mod test {
 
         let content = upload_file.into_string();
         let json_body: serde_json::Value = serde_json::from_str(&content.await.unwrap()).unwrap();
-        let download_url = json_body.get("data").unwrap();
-        assert_eq!(download_url, "http://0.0.0.0:3001/files/foo.txt");
+        let download_obj = json_body.get("data").unwrap();
+        let download_url = download_obj.get("url").unwrap();
+        assert_eq!(download_url, "http://0.0.0.0:7001/files/foo.txt");
 
         let download_file = client
             .get("/files/foo.txt")
