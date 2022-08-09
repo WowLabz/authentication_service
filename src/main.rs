@@ -13,7 +13,7 @@ mod utils;
 
 use rocket::{
     fairing::{Fairing, Info, Kind},
-    http::{Header, Status},
+    http::{ContentType, Header, Status},
     response::status,
     Request, Response,
 };
@@ -23,6 +23,21 @@ use serde_json::{json, Value};
 fn api_home() -> status::Custom<Value> {
     let message = json!({"success": true, "message": "Authentication Server"});
     status::Custom(Status::Ok, message)
+}
+
+#[get("/files")]
+pub fn file_home() -> (ContentType, &'static str) {
+    let html = r#"<html>
+      <body>
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="somefile"/>
+            <!-- <input type="text" name="username"/> -->
+            <!-- <input type="file" name="somefile"/> -->
+            <button type="submit">Submit</button>
+        </form>
+      </body>
+    </html>"#;
+    (ContentType::HTML, html)
 }
 
 #[catch(404)]
@@ -60,10 +75,24 @@ async fn rocket() -> _ {
             "/",
             routes![
                 api_home,
+                file_home,
+            ],
+        )
+        .mount(
+            "/auth",
+            routes![
                 controller::sign_in,
                 controller::sign_up,
                 controller::find_user,
-                controller::delete_user
+                controller::delete_user,
+                controller::get_user_tags,
+            ],
+        )
+        .mount(
+            "/files",
+            routes![
+                controller::upload_file,
+                controller::download_file,
             ],
         )
         .attach(CORS)
@@ -78,7 +107,7 @@ mod test {
     use super::rocket;
     use rocket::http::{ContentType, Header, Status};
     use rocket::local::asynchronous::Client;
-    const REQ_BODY_SIGN_UP: &str = "first_name=kakashi&last_name=hatake&user_type=Customer&email_id=kakashi@gmail.com&password=12!@qwer";
+    const REQ_BODY_SIGN_UP: &str = "first_name=kakashi&last_name=hatake&user_type=Customer&email_id=kakashi@gmail.com&password=12!@qwer&user_tags[0]=WebDevelopment&user_tags[1]=MobileDevelopment";
     const REQ_BODY_LOG_IN: &str = "username=kakashi@gmail.com&password=12!@qwer";
     const REQ_BODY_DEL_USER: &str = r#"{
         "username": "kakashi@gmail.com"
@@ -206,7 +235,7 @@ mod test {
             .header(content_type)
             .body(REQ_BODY_LOG_IN.clone())
             .dispatch();
-        assert_eq!(response.await.status(), Status::InternalServerError);
+        assert_eq!(response.await.status(), Status::NotImplemented);
     }
 
     #[rocket::async_test]
@@ -240,4 +269,62 @@ mod test {
             .dispatch();
         assert_eq!(response.await.status(), Status::Ok);
     }
+
+    #[rocket::async_test]
+    async fn upload_and_download_file() {
+        let content_type = "multipart/form-data; boundary=X-BOUNDARY"
+            .parse::<ContentType>()
+            .unwrap();
+
+        let client = Client::tracked(rocket().await)
+            .await
+            .expect("valid rocket instance");
+
+        let multipart_body = &[
+            "--X-BOUNDARY",
+            r#"Content-Disposition: form-data; name="somefile"; filename="foo.txt""#,
+            "Content-Type: text/plain",
+            "",
+            "hi there",
+            "--X-BOUNDARY--",
+            "",
+        ].join("\r\n");
+
+        let upload_file = client
+            .post("/files")
+            .header(content_type.clone())
+            .body(multipart_body)
+            .dispatch()
+            .await;
+        assert_eq!(upload_file.status(), Status::Ok);
+
+        let content = std::fs::read_to_string("uploads/foo.txt").unwrap();
+        assert_eq!(content, "hi there");
+
+        let content = upload_file.into_string();
+        let json_body: serde_json::Value = serde_json::from_str(&content.await.unwrap()).unwrap();
+        let download_obj = json_body.get("data").unwrap();
+        let download_url = download_obj.get("url").unwrap();
+        assert_eq!(download_url, "http://0.0.0.0:7001/files/foo.txt");
+
+        let download_file = client
+            .get("/files/foo.txt")
+            .dispatch()
+            .await;
+        assert_eq!(download_file.status(), Status::Ok);
+
+        let content = download_file.into_string();
+        assert_eq!(content.await.unwrap(), "hi there");
+
+        std::fs::remove_file("uploads/foo.txt").unwrap();
+    }
+
+    #[rocket::async_test]
+    async fn it_works_with_correct_status_for_getting_all_user_tags() {
+        let client = Client::tracked(rocket().await)
+            .await
+            .expect("valid rocket instance");
+        let response = client.get("/auth/get-user-tags").dispatch();
+        assert_eq!(response.await.status(), Status::Ok);
+    }  
 }

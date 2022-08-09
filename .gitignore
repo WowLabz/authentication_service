@@ -1,3 +1,4 @@
 /target
 .env
 /mongoDb/mongoVolume
+/uploads

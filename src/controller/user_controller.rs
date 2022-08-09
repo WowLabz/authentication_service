@@ -9,22 +9,27 @@ use rocket::{
     response::status,
 };
 use serde_json::{json, Value};
+use strum::VariantNames;
 
-#[post("/auth/sign-in", data = "<user>")]
+#[post("/sign-in", data = "<user>")]
 pub async fn sign_in(
     user: Form<Strict<LoginUser>>,
 ) -> Result<status::Custom<Value>, status::Custom<Value>> {
-    let result = UserService::login(user.into_inner().into_inner()).await.map_err(|e| {
-        let message = json!({"success": false, "message": format!("Login Failed with error: {:#?}", e)});
-        return status::Custom(Status::NotImplemented, message);
-    }).and_then(|res| {
-        let message = json!({"success": true, "message": "Login Successful", "data": res});
-        return Ok(status::Custom(Status::Ok, message));
-    });
+    let result = UserService::login(user.into_inner().into_inner())
+        .await
+        .map_err(|e| {
+            let message =
+                json!({"success": false, "message": format!("Login Failed with error: {:#?}", e)});
+            return status::Custom(Status::NotImplemented, message);
+        })
+        .and_then(|res| {
+            let message = json!({"success": true, "message": "Login Successful", "data": res});
+            return Ok(status::Custom(Status::Ok, message));
+        });
     result
 }
 
-#[post("/auth/sign-up", data = "<user>")]
+#[post("/sign-up", data = "<user>")]
 pub async fn sign_up(
     mut user: Form<Strict<RegisterUser>>,
 ) -> Result<status::Custom<Value>, status::Custom<Value>> {
@@ -44,7 +49,7 @@ pub async fn sign_up(
     result
 }
 
-#[post("/auth/find-user", data = "<user>")]
+#[post("/find-user", data = "<user>")]
 pub async fn find_user(user: Json<Value>) -> Result<status::Custom<Value>, status::Custom<Value>> {
     MongoUtil::find_one(json!(user.into_inner())).await.map_err(|err| {
         let message = json!({"success": false, "message": format!("Find User Failed with error: {:#?}", err)});
@@ -56,8 +61,10 @@ pub async fn find_user(user: Json<Value>) -> Result<status::Custom<Value>, statu
     })
 }
 
-#[post("/auth/delete-user", data = "<user>")]
-pub async fn delete_user(user: Json<DeleteUser>) -> Result<status::Custom<Value>, status::Custom<Value>> {
+#[post("/delete-user", data = "<user>")]
+pub async fn delete_user(
+    user: Json<DeleteUser>,
+) -> Result<status::Custom<Value>, status::Custom<Value>> {
     MongoUtil::delete_one_by_filter(json!({"email_id": user.username})).await.map_err(|err| {
         let message = json!({"success": false, "message": format!("Delete User Failed with error: {:#?}", err)});
         return status::Custom(Status::InternalServerError, message);
@@ -66,4 +73,10 @@ pub async fn delete_user(user: Json<DeleteUser>) -> Result<status::Custom<Value>
         let message = json!({"success": true, "message": "User Deleted", "data": data});
         return Ok(status::Custom(Status::Ok, message))
     })
+}
+
+#[get("/get-user-tags")]
+pub fn get_user_tags() -> Result<status::Custom<Value>, status::Custom<Value>> {
+    let message = json!({"success": true, "message": "User Tags", "data": UserTags::VARIANTS});
+    Ok(status::Custom(Status::Ok, message))
 }
